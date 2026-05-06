@@ -1428,6 +1428,7 @@ function renderTicketCard(ticket, mode) {
   const statusClass = `status-${slug(ticket.status)}`;
   const memo = ticket.memo?.trim() || "남긴 메모 없음";
   const leaderLine = mode === "leader" ? `<span>담당 기획자</span><p>${escapeHtml(plannerLine)} / ${escapeHtml(owner.part || "-")}</p>` : "";
+  const detailClass = leaderLine ? "has-leader" : "";
   const actionButtons =
     mode === "my"
       ? `
@@ -1457,7 +1458,7 @@ function renderTicketCard(ticket, mode) {
         </div>
       </div>
 
-      <div class="ticket-body">
+      <div class="ticket-body ${detailClass}">
         ${leaderLine ? `<div class="info-block">${leaderLine}</div>` : ""}
         <div class="info-block">
           <span>다음 액션</span>
