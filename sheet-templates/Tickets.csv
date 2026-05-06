@@ -1,0 +1,2 @@
+id,buildId,sourceUrl,name,ownerId,supportOwnerIds,workOwner,status,action,memo,lastStatusChangedAt,lastCheckedAt,createdAt,updatedAt,isArchived
+T001,B001,https://example.com/source/test-ticket-001,신규 이벤트 미션,M001,M002,서버 김OO / 클라 박OO,정상,없음,,2026-04-30T18:00:00+09:00,2026-04-30T18:00:00+09:00,2026-04-30T18:00:00+09:00,2026-04-30T18:00:00+09:00,FALSE

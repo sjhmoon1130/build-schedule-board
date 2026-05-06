@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>빌드 일정/진행 보드</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-row">
+            <h1>빌드 일정/진행 보드</h1>
+            <div class="brand-actions">
+              <button class="top-action" type="button" data-open-guide>사용 가이드</button>
+              <button class="top-action sync-action" type="button" id="openSyncDialog" title="데이터 연결 설정">
+                <span class="sync-dot" id="syncDot" aria-hidden="true"></span>
+                <span id="syncModeLabel">브라우저 저장</span>
+              </button>
+              <a class="top-action" href="https://sjhmoon1130.github.io/7sin_gc/" target="_blank" rel="noreferrer" title="지난 업데이트 내역">
+                업데이트 내역
+              </a>
+              <button class="top-action theme-tool" type="button" id="themeToggle" title="나이트 모드">
+                <span id="themeIcon" aria-hidden="true">☾</span>
+                <span id="themeLabel">나이트 모드</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="build-strip" aria-label="현재 빌드 정보">
+          <button class="build-switcher" type="button" id="openBuilds" title="빌드 선택/관리">
+            <span class="label">현재 빌드</span>
+            <strong id="buildName">5월 업데이트</strong>
+            <span class="sub-label">빌드 관리</span>
+          </button>
+          <div class="build-info-cell" id="devDueCell">
+            <span class="label">개발 마감</span>
+            <strong id="devDueText">D-7</strong>
+          </div>
+          <div class="build-info-cell">
+            <span class="label">현재 단계</span>
+            <strong id="currentPhase">개발중</strong>
+          </div>
+        </div>
+
+        <div class="user-picker">
+          <label for="currentUser">현재 사용자</label>
+          <select id="currentUser"></select>
+        </div>
+      </header>
+
+      <nav class="main-tabs" aria-label="주요 화면">
+        <div class="role-tabs">
+          <button class="tab is-active" type="button" id="myTicketsTab" data-route="myTickets">내 티켓</button>
+          <button class="tab" type="button" id="leaderTab" data-route="leader">리더 대시보드</button>
+        </div>
+        <div class="nav-tools" aria-label="관리 도구">
+          <div class="sheet-quick-actions" aria-label="시트 동기화">
+            <button class="sheet-action" type="button" id="loadSheetStateMain">시트 불러오기</button>
+            <button class="sheet-action is-primary" type="button" id="pushLocalStateMain">시트에 저장</button>
+          </div>
+          <button class="tool-button" type="button" id="openRegisterDialog" title="티켓 등록">
+            <span class="ticket-icon" aria-hidden="true"></span>
+            <span class="sr-only">티켓 등록</span>
+          </button>
+          <button class="tool-button" type="button" id="openMembersDialog" title="기획팀 관리">
+            <span class="person-icon" aria-hidden="true"></span>
+            <span class="sr-only">기획팀 관리</span>
+          </button>
+        </div>
+      </nav>
+
+      <main>
+        <section id="view-myTickets" class="view is-active" aria-labelledby="myTicketsTitle">
+          <div class="page-head">
+            <div>
+              <h2 id="myTicketsTitle">내 담당 티켓</h2>
+              <p class="muted">오늘 확인할 티켓을 보고, 퇴근 전 공유문을 복사합니다.</p>
+            </div>
+            <button class="primary-action" type="button" id="copyTodayReport">일일 업무 공유</button>
+          </div>
+
+          <div class="summary-grid" id="mySummary"></div>
+
+          <div class="toolbar">
+            <div class="filter-group" id="myStatusFilters" aria-label="내 티켓 필터"></div>
+            <p class="toolbar-hint">완료가 아닌 티켓이 2일 이상 확인되지 않으면 자동으로 표시됩니다.</p>
+          </div>
+
+          <div class="ticket-list" id="myTicketList"></div>
+        </section>
+
+        <section id="view-leader" class="view" aria-labelledby="leaderTitle">
+          <div class="page-head">
+            <div>
+              <h2 id="leaderTitle">리더 대시보드</h2>
+              <p class="muted">개입이 필요한 티켓부터 확인합니다.</p>
+            </div>
+          </div>
+
+          <div class="summary-grid" id="leaderSummary"></div>
+
+          <div class="leader-filters">
+            <label>
+              기획자
+              <select id="leaderOwnerFilter"></select>
+            </label>
+            <label>
+              파트
+              <select id="leaderPartFilter"></select>
+            </label>
+            <label>
+              상태
+              <select id="leaderStatusFilter"></select>
+            </label>
+            <label>
+              다음 액션
+              <select id="leaderActionFilter"></select>
+            </label>
+          </div>
+
+          <div class="ticket-list" id="leaderTicketList"></div>
+        </section>
+
+        <dialog id="registerDialog" class="modal wide-modal">
+          <div class="page-head">
+            <div>
+              <h2 id="registerTitle">티켓 등록</h2>
+              <p class="muted">티켓 리뷰 후, 이번 빌드에서 챙길 업무 링크만 등록합니다.</p>
+            </div>
+            <button class="icon-button" type="button" data-close-dialog="registerDialog" title="닫기">x</button>
+          </div>
+
+          <form class="form-panel" id="ticketForm">
+            <div class="form-grid">
+              <label>
+                업무 링크
+                <input id="ticketUrl" type="url" placeholder="https://..." required />
+              </label>
+              <label>
+                티켓명
+                <input id="ticketName" type="text" placeholder="신규 이벤트 미션" required />
+              </label>
+              <label>
+                담당 기획자
+                <select id="ticketOwner" required></select>
+              </label>
+              <div class="form-field">
+                <span class="field-label">추가 담당 기획자</span>
+                <div class="support-owner-list" id="supportOwners"></div>
+              </div>
+              <label>
+                작업 담당/파트
+                <input id="workOwner" type="text" placeholder="서버 김OO, 클라 박OO" required />
+              </label>
+              <label>
+                초기 체크 상태
+                <select id="initialStatus"></select>
+              </label>
+              <label>
+                다음 액션
+                <select id="initialAction"></select>
+              </label>
+            </div>
+            <label>
+              메모
+              <textarea id="initialMemo" rows="3" placeholder="필요한 경우만 입력"></textarea>
+            </label>
+            <div class="form-actions">
+              <button class="secondary-action" type="reset">초기화</button>
+              <button class="primary-action" type="submit">등록하기</button>
+            </div>
+          </form>
+        </dialog>
+
+        <dialog id="membersDialog" class="modal wide-modal">
+          <div class="page-head">
+            <div>
+              <h2 id="membersTitle">기획팀 관리</h2>
+              <p class="muted">티켓 담당자와 리더 권한에 사용할 기획팀 명단을 관리합니다.</p>
+            </div>
+            <button class="icon-button" type="button" data-close-dialog="membersDialog" title="닫기">x</button>
+          </div>
+
+          <form class="form-panel compact-form" id="memberForm">
+            <input type="hidden" id="editingMemberId" />
+            <div class="form-grid member-grid">
+              <label>
+                이름
+                <input id="memberName" type="text" placeholder="지현" required />
+              </label>
+              <label>
+                파트
+                <select id="memberPart"></select>
+              </label>
+              <label>
+                역할
+                <select id="memberRole">
+                  <option>기획자</option>
+                  <option>리더</option>
+                </select>
+              </label>
+              <label>
+                이니셜
+                <input id="memberInitials" type="text" maxlength="3" placeholder="JH" required />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="secondary-action" type="button" id="cancelMemberEdit">취소</button>
+              <button class="primary-action" type="submit" id="saveMember">멤버 추가</button>
+            </div>
+          </form>
+
+          <div class="member-notice" id="memberNotice" role="status" aria-live="polite" hidden></div>
+          <div class="member-list" id="memberList"></div>
+        </dialog>
+      </main>
+    </div>
+
+    <dialog id="guideDialog" class="modal guide-modal">
+      <div class="modal-head">
+        <div>
+          <h3>빌드 일정/진행 보드 가이드</h3>
+          <p class="muted">처음 사용하거나 기준이 헷갈릴 때 확인하는 안내입니다.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="guideDialog" title="닫기">x</button>
+      </div>
+
+      <div class="modal-scroll">
+        <section class="guide-section">
+          <h3>이 보드의 목적</h3>
+          <p>이 보드는 기존 관리 툴을 대체하지 않습니다. 기존 관리 툴은 업무 진행과 코멘트가 쌓이는 기준 자료로 사용합니다.</p>
+          <p>담당 기획자가 개발 기간 중 티켓 상태와 이슈를 짧게 남기고, 리더가 빌드 진행 상황을 빠르게 확인하기 위한 보조 도구입니다.</p>
+          <p>퇴근 전 업무 공유 문장을 새로 고민하지 않도록, 입력된 내용을 바탕으로 공유용 문장을 생성합니다.</p>
+        </section>
+
+        <section class="guide-section">
+          <h3>티켓 등록부터 완료까지</h3>
+          <div class="flow-grid">
+            <article class="flow-card">
+              <span>1</span>
+              <h4>티켓 리뷰</h4>
+              <p>이번 빌드에 포함할 업무 항목을 확정합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>2</span>
+              <h4>티켓 등록</h4>
+              <p>업무 링크, 티켓명, 담당 기획자, 작업 담당/파트를 등록합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>3</span>
+              <h4>개발 기간 확인</h4>
+              <p>담당 기획자가 본인 티켓 진행 상황을 확인합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>4</span>
+              <h4>상태 갱신 / 변동 없음</h4>
+              <p>이슈가 있으면 상태를 갱신하고, 같으면 마지막 확인일만 갱신합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>5</span>
+              <h4>완료 확인 대기</h4>
+              <p>개발 완료로 보이면 QA/빌드 확인 대상으로 표시합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>6</span>
+              <h4>완료</h4>
+              <p>기획 확인 또는 빌드 확인이 끝나면 완료로 변경합니다.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section">
+          <h3>매일 하는 업무 공유 루틴</h3>
+          <div class="flow-grid daily-flow-grid">
+            <article class="flow-card">
+              <span>1</span>
+              <h4>오늘 확인</h4>
+              <p>내 담당 티켓에서 이슈, 완료 확인 대기, 미확인 티켓을 우선 확인합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>2</span>
+              <h4>변동 없음 / 상태 변경</h4>
+              <p>상태가 같으면 확인 시간만 갱신하고, 이슈가 있으면 상태와 메모를 남깁니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>3</span>
+              <h4>일일 업무 공유</h4>
+              <p>퇴근 전 내 담당 티켓 현황을 공유 문장으로 복사합니다.</p>
+            </article>
+            <article class="flow-card">
+              <span>4</span>
+              <h4>메신저 공유</h4>
+              <p>복사한 내용을 메신저에 붙여넣어 공유합니다.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="guide-section">
+          <h3>체크 상태</h3>
+          <div class="definition-grid">
+            <div><strong>정상</strong><p>개발, 아트, 기획 흐름이 문제 없이 진행 중인 상태입니다.</p></div>
+            <div><strong>이슈 있음</strong><p>일정, 구현, 보상, 밸런스, 리소스 등에서 확인이 필요한 내용이 있는 상태입니다.</p></div>
+            <div><strong>완료 확인 대기</strong><p>개발이 완료되었거나 완료된 것으로 보여 기획 확인 또는 빌드 확인이 필요한 상태입니다.</p></div>
+            <div><strong>완료</strong><p>이번 단계에서 담당 기획자가 추가로 챙길 내용이 없는 상태입니다.</p></div>
+          </div>
+        </section>
+
+        <section class="guide-section">
+          <h3>다음 액션</h3>
+          <div class="definition-grid">
+            <div><strong>없음</strong><p>개발, 아트, 기획 흐름이 정상적으로 진행 중이며 추가 확인이나 요청 사항이 없는 상태입니다.</p></div>
+            <div><strong>개발 확인 필요</strong><p>개발 완료 후 확인 중 이슈가 생겼거나, 구현 방식, 일정, 동작 차이 등 개발 쪽 확인이 필요한 상태입니다.</p></div>
+            <div><strong>리더 확인 요청</strong><p>범위, 우선순위, 일정, 제외 여부 등 리더 판단이 필요한 상태입니다.</p></div>
+            <div><strong>QA/빌드 확인 필요</strong><p>QA 결과나 실제 빌드에서 기획 의도대로 동작하는지 확인이 필요한 상태입니다.</p></div>
+            <div><strong>아트 폴리싱 진행중</strong><p>리소스, 연출, UI 비주얼, 이펙트 등 최종 느낌을 맞추는 중인 상태입니다.</p></div>
+            <div><strong>전투 밸런스 확인 필요</strong><p>수치, 난이도, 효율, 전투 흐름 등 밸런스 확인이 필요한 상태입니다.</p></div>
+            <div><strong>보상 확정 필요</strong><p>이벤트, 미션, 상품, 콘텐츠 보상 구성을 확정해야 하는 상태입니다.</p></div>
+          </div>
+        </section>
+
+        <section class="guide-section">
+          <h3>자동 표시 기준</h3>
+          <div class="definition-grid">
+            <div><strong>오늘 확인 필요</strong><p>오늘 아직 확인하지 않은 이슈 있음, 완료 확인 대기, 2일 이상 확인 없음 티켓에 표시됩니다. [변동 없음]이나 [상태 변경]으로 확인하면 사라집니다.</p></div>
+            <div><strong>2일 이상 확인 없음</strong><p>완료가 아닌 티켓의 마지막 확인 시간이 2일 이상 지나면 자동으로 표시됩니다. 상태가 그대로라면 [변동 없음]으로 확인 시간만 갱신해도 됩니다.</p></div>
+            <div><strong>개발 마감 강조</strong><p>개발 마감 7일 전부터 상단 빌드 영역과 D-day가 강조됩니다. 마감이 지난 경우에는 더 강하게 표시됩니다.</p></div>
+            <div><strong>완료 티켓</strong><p>완료된 티켓은 목록에 남겨두되 시각적으로 한 단계 낮춰 보여줍니다. 필요한 경우 나중에 완료 필터로 다시 확인합니다.</p></div>
+          </div>
+        </section>
+
+        <section class="guide-section">
+          <h3>일일 업무 공유와 변동 없음</h3>
+          <p>퇴근 전 [일일 업무 공유]를 누르면 내 담당 티켓의 현재 상태가 공유용 문장으로 정리됩니다. 정상 티켓은 짧게 정리되고, 이슈가 있는 티켓은 상태, 다음 액션, 메모, 작업 담당/파트, 업무 링크가 함께 포함됩니다.</p>
+          <p>[변동 없음]은 상태와 메모를 바꾸지 않고 마지막 확인일만 갱신합니다. 새로 적을 내용은 없지만 담당자가 해당 티켓을 확인했다는 의미로 사용합니다.</p>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog id="buildDialog" class="modal wide-modal">
+      <div class="modal-head">
+        <div>
+          <h3>빌드 선택/관리</h3>
+          <p class="muted">지난 빌드를 확인하거나 새 월간 업데이트 보드를 만듭니다.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="buildDialog" title="닫기">x</button>
+      </div>
+
+      <div class="build-manager">
+        <section>
+          <h4>빌드 목록</h4>
+          <div class="build-list" id="buildList"></div>
+        </section>
+
+        <section>
+          <h4 id="buildFormTitle">새 빌드 만들기</h4>
+          <form id="buildForm" class="form-panel inline-panel">
+            <input type="hidden" id="editingBuildId" />
+            <div class="form-grid">
+              <label>
+                빌드명
+                <input id="buildNameInput" type="text" placeholder="6월 업데이트" required />
+              </label>
+              <label>
+                현재 단계
+                <select id="buildPhaseInput"></select>
+              </label>
+              <label>
+                개발 마감일
+                <input id="devDueInput" type="date" required />
+              </label>
+              <label>
+                업데이트 예정일
+                <input id="updateDateInput" type="date" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="secondary-action" type="button" id="cancelBuildEdit">취소</button>
+              <button class="primary-action" type="submit" id="saveBuild">빌드 만들기</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog id="ticketEditDialog" class="modal">
+      <form method="dialog" id="ticketEditForm">
+        <div class="modal-head">
+          <div>
+            <h3>담당/작업자 수정</h3>
+            <p id="editTicketNameLabel" class="muted"></p>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="ticketEditDialog" title="닫기">x</button>
+        </div>
+
+        <input type="hidden" id="editTicketId" />
+        <label>
+          티켓명
+          <input id="editTicketName" type="text" required />
+        </label>
+        <label>
+          담당 기획자
+          <select id="editTicketOwner"></select>
+        </label>
+        <div class="form-field">
+          <span class="field-label">추가 담당 기획자</span>
+          <div class="support-owner-list" id="editSupportOwners"></div>
+        </div>
+        <label>
+          작업 담당/파트
+          <input id="editWorkOwner" type="text" required />
+        </label>
+
+        <div class="form-actions">
+          <button class="secondary-action" type="button" data-close-dialog="ticketEditDialog">취소</button>
+          <button class="primary-action" type="submit">저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="stateDialog" class="modal">
+      <form method="dialog" id="stateForm">
+        <div class="modal-head">
+          <div>
+            <h3>상태 변경</h3>
+            <p id="stateTicketName" class="muted"></p>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="stateDialog" title="닫기">x</button>
+        </div>
+
+        <input type="hidden" id="stateTicketId" />
+        <label>
+          체크 상태
+          <select id="stateStatus"></select>
+        </label>
+        <label>
+          다음 액션
+          <select id="stateAction"></select>
+          <span class="field-hint" id="actionRecommendHint"></span>
+        </label>
+        <label>
+          메모
+          <textarea id="stateMemo" rows="4" placeholder="보고에 들어갈 한 줄 메모"></textarea>
+        </label>
+
+        <div class="preview-box">
+          <span class="label">보고 미리보기</span>
+          <pre id="statePreview"></pre>
+        </div>
+
+        <div class="form-actions">
+          <button class="secondary-action" type="button" data-close-dialog="stateDialog">취소</button>
+          <button class="primary-action" type="submit">저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="reportDialog" class="modal wide-modal">
+      <div class="modal-head">
+        <div>
+          <h3 id="reportTitle">일일 업무 공유</h3>
+          <p class="muted">필요하면 문장을 살짝 다듬은 뒤 메신저에 붙여넣습니다.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="reportDialog" title="닫기">x</button>
+      </div>
+      <textarea id="reportText" rows="16"></textarea>
+      <div class="form-actions">
+        <button class="secondary-action" type="button" data-close-dialog="reportDialog">닫기</button>
+        <button class="primary-action" type="button" id="copyReportText">복사하기</button>
+      </div>
+    </dialog>
+
+    <dialog id="syncDialog" class="modal wide-modal">
+      <div class="modal-head">
+        <div>
+          <h3>데이터 연결</h3>
+          <p class="muted">처음에는 브라우저 저장으로 쓰고, Apps Script URL을 넣으면 Google Sheet와 동기화합니다.</p>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="syncDialog" title="닫기">x</button>
+      </div>
+
+      <div class="sync-status-card" id="syncStatusCard">
+        <strong id="syncStatusTitle">브라우저에 저장 중</strong>
+        <p id="syncStatusDescription">이 PC의 브라우저에만 저장됩니다.</p>
+      </div>
+
+      <div class="sync-guidance">
+        <strong>여러 명이 같이 쓸 때</strong>
+        <p>시트에 저장할 때는 먼저 시트의 최신 데이터를 읽고 내 변경 내용과 합쳐서 올립니다. 서로 다른 티켓을 수정한 경우에는 각자의 변경이 함께 남고, 같은 티켓을 동시에 수정한 경우에는 더 최근 수정 내용이 기준이 됩니다.</p>
+      </div>
+
+      <form class="form-panel" id="syncForm">
+        <label>
+          저장 방식
+          <select id="storageMode">
+            <option value="local">브라우저 저장</option>
+            <option value="sheet">Google Sheet 연결</option>
+          </select>
+        </label>
+        <label>
+          Apps Script Web App URL
+          <input id="sheetWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/..." />
+          <span class="field-hint">Google Apps Script를 웹 앱으로 배포한 뒤 URL을 붙여 넣습니다.</span>
+        </label>
+        <div class="form-actions split-actions">
+          <button class="secondary-action" type="button" id="testSheetConnection">연결 확인</button>
+          <button class="secondary-action" type="button" id="openSheetTestUrl">테스트 URL 열기</button>
+          <button class="secondary-action" type="button" id="loadSheetState">시트에서 불러오기</button>
+          <button class="primary-action" type="button" id="pushLocalState">현재 데이터를 시트로 저장</button>
+          <button class="primary-action" type="submit">설정 저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
