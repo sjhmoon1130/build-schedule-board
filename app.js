@@ -20,7 +20,7 @@ const PART_COLOR_MAP = {
   설정: "gray",
   콘텐츠: "orange",
   라이브: "green",
-  시나리오: "red",
+  시나리오: "teal",
   [MANAGEMENT_PART]: "black",
 };
 const PHASE_OPTIONS = ["개발중", "개발 완료", "업데이트 완료"];
@@ -659,6 +659,17 @@ function statusBadgeClass(status) {
   return "done";
 }
 
+function actionBadgeClass(action) {
+  if (action === "없음") return "action-none";
+  if (action === "리더 확인 요청") return "action-leader";
+  if (action === "개발 확인 필요") return "action-dev";
+  if (action === "QA/빌드 확인 필요") return "action-qa";
+  if (action === "아트 폴리싱 진행중") return "action-art";
+  if (action === "전투 밸런스 확인 필요") return "action-balance";
+  if (action === "보상 확정 필요") return "action-reward";
+  return "action-default";
+}
+
 function sortTickets(tickets) {
   const rank = (ticket) => {
     if (ticket.action === "리더 확인 요청") return 1;
@@ -1209,6 +1220,16 @@ function refreshRegisterSupportOwners() {
   renderSupportOwnerList("supportOwners", sortedActiveWorkMembers().filter((member) => member.id !== ownerId), selected);
 }
 
+function resetTicketRegisterForm() {
+  window.setTimeout(() => {
+    const ownerId = defaultTicketOwnerId();
+    document.getElementById("ticketOwner").value = ownerId;
+    document.getElementById("initialStatus").value = "정상";
+    document.getElementById("initialAction").value = "없음";
+    renderSupportOwnerList("supportOwners", sortedActiveWorkMembers().filter((member) => member.id !== ownerId), []);
+  }, 0);
+}
+
 function refreshEditSupportOwners() {
   const ownerId = document.getElementById("editTicketOwner").value;
   const selected = getSelectedValues("editSupportOwners").filter((id) => id !== ownerId);
@@ -1453,14 +1474,14 @@ function renderTicketCard(ticket, mode) {
         <div class="badge-row">
           ${shouldCheckToday ? `<span class="badge today-check">오늘 확인 필요</span>` : ""}
           <span class="badge ${statusBadgeClass(ticket.status)}">${escapeHtml(ticket.status)}</span>
-          <span class="badge">${escapeHtml(ticket.action)}</span>
+          <span class="badge action-badge ${actionBadgeClass(ticket.action)}">${escapeHtml(ticket.action)}</span>
           ${stale ? `<span class="badge stale">2일 이상 확인 없음</span>` : ""}
         </div>
       </div>
 
       <div class="ticket-body ${detailClass}">
         ${leaderLine ? `<div class="info-block">${leaderLine}</div>` : ""}
-        <div class="info-block">
+        <div class="info-block action-info ${actionBadgeClass(ticket.action)}">
           <span>다음 액션</span>
           <p>${escapeHtml(ticket.action)}</p>
         </div>
@@ -1989,6 +2010,7 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("#openRegisterDialog")) {
+    document.getElementById("ticketForm").reset();
     renderRegisterFormOptions();
     document.getElementById("ticketOwner").value = defaultTicketOwnerId();
     refreshRegisterSupportOwners();
@@ -1997,6 +2019,7 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("#openMembersDialog")) {
+    clearMemberForm();
     clearMemberNotice();
     document.getElementById("membersDialog").showModal();
     return;
@@ -2131,6 +2154,7 @@ document.getElementById("stateForm").addEventListener("submit", handleStateSave)
 document.getElementById("ticketOwner").addEventListener("change", refreshRegisterSupportOwners);
 document.getElementById("editTicketOwner").addEventListener("change", refreshEditSupportOwners);
 document.getElementById("ticketForm").addEventListener("submit", handleTicketSubmit);
+document.getElementById("ticketForm").addEventListener("reset", resetTicketRegisterForm);
 document.getElementById("ticketEditForm").addEventListener("submit", handleTicketEditSubmit);
 document.getElementById("memberForm").addEventListener("submit", handleMemberSubmit);
 document.getElementById("memberPart").addEventListener("change", syncMemberRoleForPart);

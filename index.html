@@ -126,50 +126,75 @@
         </section>
 
         <dialog id="registerDialog" class="modal wide-modal">
-          <div class="page-head">
+          <div class="modal-head">
             <div>
-              <h2 id="registerTitle">티켓 등록</h2>
+              <h3 id="registerTitle">티켓 등록</h3>
               <p class="muted">티켓 리뷰 후, 이번 빌드에서 챙길 업무 링크만 등록합니다.</p>
             </div>
             <button class="icon-button" type="button" data-close-dialog="registerDialog" title="닫기">x</button>
           </div>
 
-          <form class="form-panel" id="ticketForm">
-            <div class="form-grid">
-              <label>
-                업무 링크
-                <input id="ticketUrl" type="url" placeholder="https://..." required />
-              </label>
-              <label>
-                티켓명
-                <input id="ticketName" type="text" placeholder="신규 이벤트 미션" required />
-              </label>
-              <label>
-                담당 기획자
-                <select id="ticketOwner" required></select>
-              </label>
-              <div class="form-field">
-                <span class="field-label">추가 담당 기획자</span>
-                <div class="support-owner-list" id="supportOwners"></div>
+          <form class="modal-layout-form" id="ticketForm">
+            <section class="form-section">
+              <div class="section-head">
+                <span class="section-index">1</span>
+                <h4>업무 기본 정보</h4>
               </div>
-              <label>
-                작업 담당/파트
-                <input id="workOwner" type="text" placeholder="서버 김OO, 클라 박OO" required />
-              </label>
-              <label>
-                초기 체크 상태
-                <select id="initialStatus"></select>
-              </label>
-              <label>
-                다음 액션
-                <select id="initialAction"></select>
-              </label>
-            </div>
-            <label>
-              메모
-              <textarea id="initialMemo" rows="3" placeholder="필요한 경우만 입력"></textarea>
-            </label>
-            <div class="form-actions">
+              <div class="form-grid">
+                <label>
+                  업무 링크
+                  <input id="ticketUrl" type="url" placeholder="https://..." required />
+                </label>
+                <label>
+                  티켓명
+                  <input id="ticketName" type="text" placeholder="신규 이벤트 미션" required />
+                </label>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-head">
+                <span class="section-index">2</span>
+                <h4>담당자</h4>
+              </div>
+              <div class="form-grid">
+                <label>
+                  담당 기획자
+                  <select id="ticketOwner" required></select>
+                </label>
+                <label>
+                  작업 담당/파트
+                  <input id="workOwner" type="text" placeholder="서버 김OO, 클라 박OO" required />
+                </label>
+                <div class="form-field field-wide">
+                  <span class="field-label">추가 담당 기획자</span>
+                  <div class="support-owner-list" id="supportOwners"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-head">
+                <span class="section-index">3</span>
+                <h4>초기 상태</h4>
+              </div>
+              <div class="form-grid">
+                <label>
+                  초기 체크 상태
+                  <select id="initialStatus"></select>
+                </label>
+                <label>
+                  다음 액션
+                  <select id="initialAction"></select>
+                </label>
+                <label class="field-wide">
+                  메모
+                  <textarea id="initialMemo" rows="3" placeholder="필요한 경우만 입력"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <div class="form-actions modal-footer">
               <button class="secondary-action" type="reset">초기화</button>
               <button class="primary-action" type="submit">등록하기</button>
             </div>
@@ -177,45 +202,59 @@
         </dialog>
 
         <dialog id="membersDialog" class="modal wide-modal">
-          <div class="page-head">
+          <div class="modal-head">
             <div>
-              <h2 id="membersTitle">기획팀 관리</h2>
+              <h3 id="membersTitle">기획팀 관리</h3>
               <p class="muted">티켓 담당자와 리더 권한에 사용할 기획팀 명단을 관리합니다.</p>
             </div>
             <button class="icon-button" type="button" data-close-dialog="membersDialog" title="닫기">x</button>
           </div>
 
-          <form class="form-panel compact-form" id="memberForm">
-            <input type="hidden" id="editingMemberId" />
-            <div class="form-grid member-grid">
-              <label>
-                이름
-                <input id="memberName" type="text" placeholder="지현" required />
-              </label>
-              <label>
-                파트
-                <select id="memberPart"></select>
-              </label>
-              <label>
-                역할
-                <select id="memberRole">
-                  <option>기획자</option>
-                  <option>리더</option>
-                </select>
-              </label>
-              <label>
-                이니셜
-                <input id="memberInitials" type="text" maxlength="3" placeholder="JH" required />
-              </label>
-            </div>
-            <div class="form-actions">
-              <button class="secondary-action" type="button" id="cancelMemberEdit">취소</button>
-              <button class="primary-action" type="submit" id="saveMember">멤버 추가</button>
-            </div>
-          </form>
+          <div class="member-manager">
+            <form class="modal-layout-form member-editor" id="memberForm">
+              <section class="form-section">
+                <div class="section-head">
+                  <span class="section-index">1</span>
+                  <h4>멤버 정보</h4>
+                </div>
+                <input type="hidden" id="editingMemberId" />
+                <div class="form-grid member-grid">
+                  <label>
+                    이름
+                    <input id="memberName" type="text" placeholder="지현" required />
+                  </label>
+                  <label>
+                    파트
+                    <select id="memberPart"></select>
+                  </label>
+                  <label>
+                    역할
+                    <select id="memberRole">
+                      <option>기획자</option>
+                      <option>리더</option>
+                    </select>
+                  </label>
+                  <label>
+                    이니셜
+                    <input id="memberInitials" type="text" maxlength="3" placeholder="JH" required />
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <button class="secondary-action" type="button" id="cancelMemberEdit">취소</button>
+                  <button class="primary-action" type="submit" id="saveMember">멤버 추가</button>
+                </div>
+              </section>
+            </form>
 
-          <div class="member-notice" id="memberNotice" role="status" aria-live="polite" hidden></div>
-          <div class="member-list" id="memberList"></div>
+            <section class="form-section member-directory">
+              <div class="section-head">
+                <span class="section-index">2</span>
+                <h4>기획팀 명단</h4>
+              </div>
+              <div class="member-notice" id="memberNotice" role="status" aria-live="polite" hidden></div>
+              <div class="member-list" id="memberList"></div>
+            </section>
+          </div>
         </dialog>
       </main>
     </div>
@@ -340,7 +379,7 @@
       </div>
     </dialog>
 
-    <dialog id="buildDialog" class="modal wide-modal">
+    <dialog id="buildDialog" class="modal wide-modal build-modal">
       <div class="modal-head">
         <div>
           <h3>빌드 선택/관리</h3>
@@ -350,14 +389,20 @@
       </div>
 
       <div class="build-manager">
-        <section>
-          <h4>빌드 목록</h4>
+        <section class="form-section build-list-section">
+          <div class="section-head">
+            <span class="section-index">1</span>
+            <h4>빌드 목록</h4>
+          </div>
           <div class="build-list" id="buildList"></div>
         </section>
 
-        <section>
-          <h4 id="buildFormTitle">새 빌드 만들기</h4>
-          <form id="buildForm" class="form-panel inline-panel">
+        <section class="form-section build-form-section">
+          <div class="section-head">
+            <span class="section-index">2</span>
+            <h4 id="buildFormTitle">새 빌드 만들기</h4>
+          </div>
+          <form id="buildForm" class="modal-layout-form inline-panel">
             <input type="hidden" id="editingBuildId" />
             <div class="form-grid">
               <label>
@@ -377,7 +422,7 @@
                 <input id="updateDateInput" type="date" />
               </label>
             </div>
-            <div class="form-actions">
+            <div class="form-actions modal-footer">
               <button class="secondary-action" type="button" id="cancelBuildEdit">취소</button>
               <button class="primary-action" type="submit" id="saveBuild">빌드 만들기</button>
             </div>
@@ -386,8 +431,8 @@
       </div>
     </dialog>
 
-    <dialog id="ticketEditDialog" class="modal">
-      <form method="dialog" id="ticketEditForm">
+    <dialog id="ticketEditDialog" class="modal wide-modal">
+      <form method="dialog" id="ticketEditForm" class="modal-layout-form">
         <div class="modal-head">
           <div>
             <h3>담당/작업자 수정</h3>
@@ -397,32 +442,49 @@
         </div>
 
         <input type="hidden" id="editTicketId" />
-        <label>
-          티켓명
-          <input id="editTicketName" type="text" required />
-        </label>
-        <label>
-          담당 기획자
-          <select id="editTicketOwner"></select>
-        </label>
-        <div class="form-field">
-          <span class="field-label">추가 담당 기획자</span>
-          <div class="support-owner-list" id="editSupportOwners"></div>
-        </div>
-        <label>
-          작업 담당/파트
-          <input id="editWorkOwner" type="text" required />
-        </label>
+        <section class="form-section">
+          <div class="section-head">
+            <span class="section-index">1</span>
+            <h4>업무 정보</h4>
+          </div>
+          <div class="form-grid">
+            <label>
+              티켓명
+              <input id="editTicketName" type="text" required />
+            </label>
+            <label>
+              작업 담당/파트
+              <input id="editWorkOwner" type="text" required />
+            </label>
+          </div>
+        </section>
 
-        <div class="form-actions">
+        <section class="form-section">
+          <div class="section-head">
+            <span class="section-index">2</span>
+            <h4>담당 기획자</h4>
+          </div>
+          <div class="form-grid">
+            <label>
+              담당 기획자
+              <select id="editTicketOwner"></select>
+            </label>
+            <div class="form-field field-wide">
+              <span class="field-label">추가 담당 기획자</span>
+              <div class="support-owner-list" id="editSupportOwners"></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="form-actions modal-footer">
           <button class="secondary-action" type="button" data-close-dialog="ticketEditDialog">취소</button>
           <button class="primary-action" type="submit">저장</button>
         </div>
       </form>
     </dialog>
 
-    <dialog id="stateDialog" class="modal">
-      <form method="dialog" id="stateForm">
+    <dialog id="stateDialog" class="modal wide-modal state-modal">
+      <form method="dialog" id="stateForm" class="modal-layout-form">
         <div class="modal-head">
           <div>
             <h3>상태 변경</h3>
@@ -432,26 +494,39 @@
         </div>
 
         <input type="hidden" id="stateTicketId" />
-        <label>
-          체크 상태
-          <select id="stateStatus"></select>
-        </label>
-        <label>
-          다음 액션
-          <select id="stateAction"></select>
-          <span class="field-hint" id="actionRecommendHint"></span>
-        </label>
-        <label>
-          메모
-          <textarea id="stateMemo" rows="4" placeholder="보고에 들어갈 한 줄 메모"></textarea>
-        </label>
+        <div class="state-layout-grid">
+          <section class="form-section">
+            <div class="section-head">
+              <span class="section-index">1</span>
+              <h4>상태 입력</h4>
+            </div>
+            <div class="form-grid single-column">
+              <label>
+                체크 상태
+                <select id="stateStatus"></select>
+              </label>
+              <label>
+                다음 액션
+                <select id="stateAction"></select>
+                <span class="field-hint" id="actionRecommendHint"></span>
+              </label>
+              <label>
+                메모
+                <textarea id="stateMemo" rows="5" placeholder="보고에 들어갈 한 줄 메모"></textarea>
+              </label>
+            </div>
+          </section>
 
-        <div class="preview-box">
-          <span class="label">보고 미리보기</span>
-          <pre id="statePreview"></pre>
+          <section class="preview-box state-preview-panel">
+            <div class="section-head">
+              <span class="section-index">2</span>
+              <h4>보고 미리보기</h4>
+            </div>
+            <pre id="statePreview"></pre>
+          </section>
         </div>
 
-        <div class="form-actions">
+        <div class="form-actions modal-footer">
           <button class="secondary-action" type="button" data-close-dialog="stateDialog">취소</button>
           <button class="primary-action" type="submit">저장</button>
         </div>
@@ -466,8 +541,14 @@
         </div>
         <button class="icon-button" type="button" data-close-dialog="reportDialog" title="닫기">x</button>
       </div>
-      <textarea id="reportText" rows="16"></textarea>
-      <div class="form-actions">
+      <section class="form-section report-section">
+        <div class="section-head">
+          <span class="section-index">1</span>
+          <h4>공유문</h4>
+        </div>
+        <textarea id="reportText" rows="16"></textarea>
+      </section>
+      <div class="form-actions modal-footer">
         <button class="secondary-action" type="button" data-close-dialog="reportDialog">닫기</button>
         <button class="primary-action" type="button" id="copyReportText">복사하기</button>
       </div>
@@ -487,31 +568,53 @@
         <p id="syncStatusDescription">이 PC의 브라우저에만 저장됩니다.</p>
       </div>
 
-      <div class="sync-guidance">
-        <strong>여러 명이 같이 쓸 때</strong>
-        <p>시트에 저장할 때는 먼저 시트의 최신 데이터를 읽고 내 변경 내용과 합쳐서 올립니다. 서로 다른 티켓을 수정한 경우에는 각자의 변경이 함께 남고, 같은 티켓을 동시에 수정한 경우에는 더 최근 수정 내용이 기준이 됩니다.</p>
-      </div>
+      <form class="modal-layout-form" id="syncForm">
+        <div class="sync-layout-grid">
+          <section class="form-section">
+            <div class="section-head">
+              <span class="section-index">1</span>
+              <h4>연결 설정</h4>
+            </div>
+            <label>
+              저장 방식
+              <select id="storageMode">
+                <option value="local">브라우저 저장</option>
+                <option value="sheet">Google Sheet 연결</option>
+              </select>
+            </label>
+            <label>
+              Apps Script Web App URL
+              <input id="sheetWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/..." />
+              <span class="field-hint">Google Apps Script를 웹 앱으로 배포한 뒤 URL을 붙여 넣습니다.</span>
+            </label>
+          </section>
 
-      <form class="form-panel" id="syncForm">
-        <label>
-          저장 방식
-          <select id="storageMode">
-            <option value="local">브라우저 저장</option>
-            <option value="sheet">Google Sheet 연결</option>
-          </select>
-        </label>
-        <label>
-          Apps Script Web App URL
-          <input id="sheetWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/..." />
-          <span class="field-hint">Google Apps Script를 웹 앱으로 배포한 뒤 URL을 붙여 넣습니다.</span>
-        </label>
-        <div class="form-actions split-actions">
-          <button class="secondary-action" type="button" id="testSheetConnection">연결 확인</button>
-          <button class="secondary-action" type="button" id="openSheetTestUrl">테스트 URL 열기</button>
-          <button class="secondary-action" type="button" id="loadSheetState">시트에서 불러오기</button>
-          <button class="primary-action" type="button" id="pushLocalState">현재 데이터를 시트로 저장</button>
-          <button class="primary-action" type="submit">설정 저장</button>
+          <section class="sync-guidance">
+            <div class="section-head">
+              <span class="section-index">2</span>
+              <h4>동시 사용 기준</h4>
+            </div>
+            <p>시트에 저장할 때는 먼저 시트의 최신 데이터를 읽고 내 변경 내용과 합쳐서 올립니다. 서로 다른 티켓을 수정한 경우에는 각자의 변경이 함께 남고, 같은 티켓을 동시에 수정한 경우에는 더 최근 수정 내용이 기준이 됩니다.</p>
+          </section>
         </div>
+
+        <section class="form-section sync-command-section">
+          <div class="section-head">
+            <span class="section-index">3</span>
+            <h4>동기화 작업</h4>
+          </div>
+          <div class="sync-actions">
+            <div class="sync-action-group">
+              <button class="secondary-action" type="button" id="testSheetConnection">연결 확인</button>
+              <button class="secondary-action" type="button" id="openSheetTestUrl">테스트 URL 열기</button>
+              <button class="secondary-action" type="button" id="loadSheetState">시트에서 불러오기</button>
+            </div>
+            <div class="sync-action-group is-primary">
+              <button class="primary-action" type="button" id="pushLocalState">현재 데이터를 시트로 저장</button>
+              <button class="primary-action" type="submit">설정 저장</button>
+            </div>
+          </div>
+        </section>
       </form>
     </dialog>
 
