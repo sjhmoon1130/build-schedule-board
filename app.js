@@ -1037,6 +1037,19 @@ function render(options = {}) {
   saveState();
 }
 
+function openDialog(id, focusSelector = "") {
+  const dialog = document.getElementById(id);
+  if (!dialog) return;
+  if (!dialog.open) dialog.showModal();
+  dialog.scrollTop = 0;
+  dialog.querySelector(".modal-scroll")?.scrollTo({ top: 0 });
+
+  window.setTimeout(() => {
+    const focusTarget = focusSelector ? dialog.querySelector(focusSelector) : dialog.querySelector("input, select, textarea, button");
+    focusTarget?.focus({ preventScroll: true });
+  }, 0);
+}
+
 function renderTheme() {
   document.body.dataset.theme = state.theme === "dark" ? "dark" : "light";
   document.getElementById("themeIcon").textContent = state.theme === "dark" ? "☀" : "☾";
@@ -1273,14 +1286,16 @@ function renderBuilds() {
       `;
     })
     .join("")
-    : `<div class="empty-state">표시할 빌드가 없습니다.</div>`;
+    : emptyState("등록된 빌드가 없습니다.", "오른쪽 새 빌드 만들기에서 빌드명과 개발 마감일을 입력하면 보드가 만들어집니다.");
 }
 
 function renderMembers() {
   document.getElementById("memberPart").innerHTML = optionList(PART_OPTIONS, PART_OPTIONS[0]);
   syncMemberRoleForPart();
 
-  document.getElementById("memberList").innerHTML = sortedMembers(state.members)
+  const members = sortedMembers(state.members);
+  document.getElementById("memberList").innerHTML = members.length
+    ? members
     .map((member) => {
       const inlineNotice =
         memberInlineNotice?.memberId === member.id
@@ -1305,7 +1320,8 @@ function renderMembers() {
         </article>
       `;
     })
-    .join("");
+    .join("")
+    : emptyState("등록된 기획팀 멤버가 없습니다.", "왼쪽 멤버 정보에서 이름, 파트, 이니셜을 입력해 추가할 수 있습니다.");
 }
 
 function summaryTile(label, value, type, options = {}) {
@@ -1376,7 +1392,7 @@ function renderSupportOwnerList(id, members, selectedValues = []) {
           (member) => `
             <button class="support-chip" type="button" data-support-toggle="${member.id}" aria-label="${escapeHtml(member.name)} 선택 해제">
               ${escapeHtml(member.name)}
-              <span aria-hidden="true">x</span>
+              <span aria-hidden="true">×</span>
             </button>
           `
         )
@@ -1431,11 +1447,50 @@ function defaultTicketOwnerId() {
 
 function renderTicketList(container, tickets, { mode }) {
   if (!tickets.length) {
-    container.innerHTML = `<div class="empty-state">표시할 티켓이 없습니다.</div>`;
+    container.innerHTML = emptyTicketState(mode);
     return;
   }
 
   container.innerHTML = tickets.map((ticket) => renderTicketCard(ticket, mode)).join("");
+}
+
+function emptyState(title, description, actionHtml = "") {
+  return `
+    <div class="empty-state">
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(description)}</p>
+      ${actionHtml ? `<div class="empty-actions">${actionHtml}</div>` : ""}
+    </div>
+  `;
+}
+
+function emptyTicketState(mode) {
+  if (mode === "my") {
+    if (ownerTickets().length) {
+      return emptyState(
+        "이 필터에 해당하는 내 티켓이 없습니다.",
+        "다른 상태를 확인하려면 전체 필터로 돌아가면 됩니다.",
+        `<button class="secondary-action" type="button" data-my-filter="전체">전체 보기</button>`
+      );
+    }
+
+    return emptyState(
+      "현재 사용자에게 배정된 티켓이 없습니다.",
+      "티켓 등록에서 업무 링크를 추가하거나, 현재 사용자가 맞는지 확인해 주세요.",
+      `<button class="secondary-action" type="button" data-empty-action="register">티켓 등록 열기</button>`
+    );
+  }
+
+  const filtersActive = Object.keys(DEFAULT_LEADER_FILTERS).some((key) => state.leaderFilters[key] !== DEFAULT_LEADER_FILTERS[key]);
+  if (filtersActive) {
+    return emptyState(
+      "현재 필터에 해당하는 티켓이 없습니다.",
+      "기획자, 파트, 상태, 다음 액션 조건을 줄이면 다시 확인할 수 있습니다.",
+      `<button class="secondary-action" type="button" data-reset-leader-filters>필터 초기화</button>`
+    );
+  }
+
+  return emptyState("이번 빌드에 등록된 티켓이 없습니다.", "티켓 등록에서 이번 빌드에 챙길 업무 링크를 추가해 주세요.");
 }
 
 function renderTicketCard(ticket, mode) {
@@ -1465,7 +1520,9 @@ function renderTicketCard(ticket, mode) {
       <div class="ticket-head">
         <div class="ticket-title-line">
           <span class="avatar ${owner.color || "gray"}">${escapeHtml(owner.initials || "-")}</span>
-          <a class="title-link-action" href="${escapeHtml(ticket.sourceUrl)}" target="_blank" rel="noreferrer" title="업무 링크 열기">↗</a>
+          <a class="title-link-action" href="${escapeHtml(ticket.sourceUrl)}" target="_blank" rel="noreferrer" title="업무 링크 열기" aria-label="업무 링크 열기">
+            <span class="external-link-glyph" aria-hidden="true"></span>
+          </a>
           <div class="ticket-title">
             <h3>${escapeHtml(ticket.name)}</h3>
             <div class="ticket-meta">기획: ${escapeHtml(plannerLine)} / 작업: ${escapeHtml(ticket.workOwner)}</div>
@@ -1517,7 +1574,7 @@ function openStateDialog(ticketId) {
   document.getElementById("stateMemo").value = ticket.memo || "";
   renderActionRecommendHint();
   updateStatePreview();
-  document.getElementById("stateDialog").showModal();
+  openDialog("stateDialog", "#stateStatus");
 }
 
 function renderActionRecommendHint() {
@@ -1667,7 +1724,7 @@ function buildTicketReport(ticket) {
 function openReportDialog(text, title = "일일 업무 공유") {
   document.getElementById("reportTitle").textContent = title;
   document.getElementById("reportText").value = text;
-  document.getElementById("reportDialog").showModal();
+  openDialog("reportDialog", "#reportText");
 }
 
 async function copyText(text) {
@@ -1685,12 +1742,18 @@ async function copyText(text) {
   }
 }
 
-function showToast(message) {
+function inferToastTone(message) {
+  if (/실패|오류|입력|없습니다|삭제할 수|필요|요청|이슈|먼저/.test(message)) return "warning";
+  if (/저장|등록|수정|복사|확인|불러왔|삭제|전환|갱신|사용/.test(message)) return "success";
+  return "info";
+}
+
+function showToast(message, tone = "") {
   const toast = document.getElementById("toast");
   toast.textContent = message;
-  toast.classList.add("is-visible");
+  toast.className = `toast ${tone || inferToastTone(message)} is-visible`;
   window.clearTimeout(showToast.timer);
-  showToast.timer = window.setTimeout(() => toast.classList.remove("is-visible"), 1800);
+  showToast.timer = window.setTimeout(() => toast.classList.remove("is-visible"), 2400);
 }
 
 function handleTicketSubmit(event) {
@@ -1970,7 +2033,7 @@ function openTicketEditDialog(ticketId) {
   document.getElementById("editTicketOwner").value = ticket.ownerId;
   renderSupportOwnerList("editSupportOwners", supportOptions, ticket.supportOwnerIds || []);
   document.getElementById("editWorkOwner").value = ticket.workOwner;
-  document.getElementById("ticketEditDialog").showModal();
+  openDialog("ticketEditDialog", "#editTicketName");
 }
 
 function handleTicketEditSubmit(event) {
@@ -1992,13 +2055,13 @@ function handleTicketEditSubmit(event) {
 
 document.addEventListener("click", (event) => {
   if (event.target.closest("[data-open-guide]")) {
-    document.getElementById("guideDialog").showModal();
+    openDialog("guideDialog");
     return;
   }
 
   if (event.target.closest("#openSyncDialog")) {
     renderSyncStatus();
-    document.getElementById("syncDialog").showModal();
+    openDialog("syncDialog", "#storageMode");
     return;
   }
 
@@ -2014,14 +2077,30 @@ document.addEventListener("click", (event) => {
     renderRegisterFormOptions();
     document.getElementById("ticketOwner").value = defaultTicketOwnerId();
     refreshRegisterSupportOwners();
-    document.getElementById("registerDialog").showModal();
+    openDialog("registerDialog", "#ticketUrl");
     return;
   }
 
   if (event.target.closest("#openMembersDialog")) {
     clearMemberForm();
     clearMemberNotice();
-    document.getElementById("membersDialog").showModal();
+    openDialog("membersDialog", "#memberName");
+    return;
+  }
+
+  const emptyActionButton = event.target.closest("[data-empty-action]");
+  if (emptyActionButton?.dataset.emptyAction === "register") {
+    document.getElementById("ticketForm").reset();
+    renderRegisterFormOptions();
+    document.getElementById("ticketOwner").value = defaultTicketOwnerId();
+    refreshRegisterSupportOwners();
+    openDialog("registerDialog", "#ticketUrl");
+    return;
+  }
+
+  if (event.target.closest("[data-reset-leader-filters]")) {
+    state.leaderFilters = { ...DEFAULT_LEADER_FILTERS };
+    render();
     return;
   }
 
@@ -2163,7 +2242,7 @@ document.getElementById("buildForm").addEventListener("submit", handleBuildSubmi
 document.getElementById("cancelBuildEdit").addEventListener("click", clearBuildForm);
 document.getElementById("openBuilds").addEventListener("click", () => {
   clearBuildForm();
-  document.getElementById("buildDialog").showModal();
+  openDialog("buildDialog", "#buildNameInput");
 });
 
 document.getElementById("buildList").addEventListener("keydown", (event) => {
