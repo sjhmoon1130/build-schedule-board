@@ -12,6 +12,7 @@ const SHEET_COLUMNS = {
     "ownerId",
     "supportOwnerIds",
     "workOwner",
+    "progress",
     "status",
     "action",
     "memo",
@@ -137,13 +138,23 @@ function readRows(sheetName) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
 
+  const totalCols = Math.max(sheet.getLastColumn(), columns.length);
+  const headerValues = sheet.getRange(1, 1, 1, totalCols).getValues()[0];
+
+  // 시트 실제 헤더 기준으로 컬럼명 → 인덱스 매핑
+  const colIndexMap = {};
+  headerValues.forEach((name, i) => {
+    if (name) colIndexMap[String(name)] = i;
+  });
+
   return sheet
-    .getRange(2, 1, lastRow - 1, columns.length)
+    .getRange(2, 1, lastRow - 1, totalCols)
     .getValues()
     .filter((row) => row.some((value) => value !== ""))
     .map((values) =>
-      columns.reduce((row, column, index) => {
-        row[column] = normalizeCell(values[index]);
+      columns.reduce((row, column) => {
+        const idx = colIndexMap[column];
+        row[column] = normalizeCell(idx !== undefined ? values[idx] : "");
         return row;
       }, {}),
     );

@@ -1,4 +1,4 @@
-const STORAGE_KEY = "build-board-prototype-v8";
+const STORAGE_KEY = "build-board-prototype-v9";
 const SYNC_CONFIG_KEY = "build-board-sync-config-v1";
 
 const STATUS_OPTIONS = ["정상", "이슈 있음", "완료 확인 대기", "완료"];
@@ -41,38 +41,15 @@ const DEFAULT_SYNC_CONFIG = {
 const memberNameCollator = new Intl.Collator("ko-KR", { sensitivity: "base" });
 
 const sampleData = {
-  currentUserId: "M001",
-  currentBuildId: "B001",
+  currentUserId: "",
+  currentBuildId: "",
   theme: "light",
   route: "myTickets",
   myStatusFilter: "전체",
   leaderFilters: { ...DEFAULT_LEADER_FILTERS },
-  builds: [
-    {
-      id: "B000",
-      name: "4월 업데이트",
-      devStartDate: "2026-03-18",
-      devDueDate: "2026-04-08",
-      devReviewDate: "2026-04-09",
-      updateDate: "2026-04-16",
-      currentPhase: "업데이트 완료",
-      createdAt: "2026-03-10T10:00:00+09:00",
-      updatedAt: "2026-04-16T19:00:00+09:00",
-    },
-    {
-      id: "B001",
-      name: "5월 업데이트",
-      devStartDate: "2026-04-15",
-      devDueDate: "2026-05-05",
-      devReviewDate: "2026-05-06",
-      updateDate: "2026-05-12",
-      currentPhase: "개발중",
-      createdAt: "2026-04-10T10:00:00+09:00",
-      updatedAt: "2026-04-28T17:00:00+09:00",
-    },
-  ],
-  members: createSampleMembers(),
-  tickets: createSampleTickets(),
+  builds: [],
+  members: [],
+  tickets: [],
   checkins: [],
 };
 
@@ -330,6 +307,8 @@ function normalizeState(data) {
   data.tickets.forEach((ticket) => {
     ticket.supportOwnerIds = Array.isArray(ticket.supportOwnerIds) ? ticket.supportOwnerIds : splitIdList(ticket.supportOwnerIds);
     ticket.isArchived = toBooleanValue(ticket.isArchived);
+    const p = Number(ticket.progress);
+    ticket.progress = Number.isFinite(p) ? Math.max(0, Math.min(100, Math.round(p))) : 0;
   });
   return data;
 }
@@ -370,6 +349,7 @@ function getSharedState() {
       ownerId: ticket.ownerId,
       supportOwnerIds: ticket.supportOwnerIds || [],
       workOwner: ticket.workOwner,
+      progress: ticket.progress || 0,
       status: ticket.status,
       action: ticket.action,
       memo: ticket.memo || "",
@@ -566,6 +546,7 @@ function formatDateOnly(value) {
 
 function getDevDueText() {
   const diff = getDevDueDelta();
+  if (diff === null) return "-";
   if (diff > 0) return `D-${diff}`;
   if (diff === 0) return "D-Day";
   return `D+${Math.abs(diff)}`;
@@ -573,8 +554,10 @@ function getDevDueText() {
 
 function getDevDueDelta() {
   const build = currentBuild();
-  if (!build?.devDueDate) return 0;
-  const due = toDate(`${build.devDueDate}T23:59:59`);
+  if (!build?.devDueDate) return null;
+  const dateStr = String(build.devDueDate).trim().slice(0, 10);
+  const due = toDate(`${dateStr}T23:59:59`);
+  if (!due || isNaN(due.getTime())) return null;
   const now = new Date();
   return Math.ceil((startOfDay(due) - startOfDay(now)) / 86400000);
 }
@@ -710,7 +693,7 @@ function sheetJsonpRequest(action) {
     const timeout = window.setTimeout(() => {
       cleanup();
       reject(new Error("Google Sheet 응답 시간이 초과되었습니다."));
-    }, 12000);
+    }, 20000);
 
     function cleanup() {
       window.clearTimeout(timeout);
@@ -974,9 +957,9 @@ async function autoLoadSharedStateFromSheet() {
     setSyncStatus("synced", "Google Sheet에서 데이터를 불러왔습니다.", true);
     showToast("시트 데이터를 자동으로 불러왔습니다.");
     render();
-  } catch (error) {
+  } catch {
     isApplyingRemoteState = false;
-    setSyncStatus("error", "자동 불러오기에 실패했습니다. 필요하면 시트 불러오기를 눌러 주세요.");
+    setSyncStatus("configured", "자동 불러오기를 건너뛰었습니다. 필요하면 시트 불러오기를 눌러 주세요.");
   }
 }
 
@@ -1070,8 +1053,8 @@ function renderBuildInfo() {
   document.getElementById("buildName").textContent = build.name;
   document.getElementById("devDueText").textContent = getDevDueText();
   document.getElementById("currentPhase").textContent = build.currentPhase;
-  buildStrip.classList.toggle("is-due-soon", dueDelta >= 0 && dueDelta <= 7);
-  buildStrip.classList.toggle("is-overdue", dueDelta < 0);
+  buildStrip.classList.toggle("is-due-soon", dueDelta !== null && dueDelta >= 0 && dueDelta <= 7);
+  buildStrip.classList.toggle("is-overdue", dueDelta !== null && dueDelta < 0);
 }
 
 function renderUserPicker() {
@@ -1543,6 +1526,13 @@ function renderTicketCard(ticket, mode) {
           <p>${escapeHtml(ticket.action)}</p>
         </div>
         <div class="info-block">
+          <span>작업 진행도</span>
+          <p class="progress-cell">
+            <span class="progress-bar-track"><span class="progress-bar-fill" style="width:${ticket.progress ?? 0}%"></span></span>
+            <span class="progress-pct">${ticket.progress ?? 0}%</span>
+          </p>
+        </div>
+        <div class="info-block">
           <span>마지막 확인</span>
           <p>${formatDateTime(ticket.lastCheckedAt)}</p>
         </div>
@@ -1572,6 +1562,9 @@ function openStateDialog(ticketId) {
   document.getElementById("stateStatus").innerHTML = optionList(STATUS_OPTIONS, ticket.status);
   document.getElementById("stateAction").innerHTML = optionList(ACTION_OPTIONS, ticket.action);
   document.getElementById("stateMemo").value = ticket.memo || "";
+  const progress = ticket.progress ?? 0;
+  document.getElementById("stateProgress").value = progress;
+  document.getElementById("progressValue").textContent = `${progress}%`;
   renderActionRecommendHint();
   updateStatePreview();
   openDialog("stateDialog", "#stateStatus");
@@ -1597,6 +1590,7 @@ function updateStatePreview() {
     status: document.getElementById("stateStatus").value,
     action: document.getElementById("stateAction").value,
     memo: document.getElementById("stateMemo").value,
+    progress: Number(document.getElementById("stateProgress").value),
     lastCheckedAt: nowIso(),
   };
   renderActionRecommendHint();
@@ -1625,6 +1619,7 @@ function handleStateSave(event) {
   ticket.status = newStatus;
   ticket.action = newAction;
   ticket.memo = newMemo;
+  ticket.progress = Number(document.getElementById("stateProgress").value);
   ticket.lastCheckedAt = timestamp;
   ticket.updatedAt = timestamp;
   if (changed) ticket.lastStatusChangedAt = timestamp;
@@ -1675,46 +1670,37 @@ function createId(prefix) {
 }
 
 function buildTodayReport() {
-  const tickets = sortTickets(ownerTickets());
+  const myTickets = sortTickets(activeTickets().filter((ticket) => ticket.ownerId === state.currentUserId));
   const owner = getMember(state.currentUserId);
   const header = `[${currentBuild().name} 담당 티켓 공유 - ${owner?.name || "담당자"}]`;
-  const body = tickets.map(buildTicketReport).join("\n\n");
+  const body = myTickets.map(buildTicketReport).join("\n\n");
   return `${header}\n\n${body || "등록된 담당 티켓이 없습니다."}`;
 }
 
 function buildTicketReport(ticket) {
-  const lines = [`- ${ticket.name}`];
+  const progress = ticket.progress ?? 0;
+  const progressText = `진행도: ${progress}%`;
+  const lines = [`- ${ticket.name} (${progressText})`];
   const checkedText = formatDateTime(ticket.lastCheckedAt);
   const statusChangedText = formatDateOnly(ticket.lastStatusChangedAt);
-  const owner = getMember(ticket.ownerId);
-  const supportOwners = (ticket.supportOwnerIds || []).map(getMember).filter(Boolean);
-  const plannerLine = supportOwners.length
-    ? `${owner?.name || "-"} / 추가: ${supportOwners.map((member) => member.name).join(", ")}`
-    : owner?.name || "-";
+
+  if (ticket.status === "완료") {
+    lines.push("  완료");
+    if (ticket.memo?.trim()) lines.push(`  내용: ${ticket.memo.trim()}`);
+    lines.push(`  업무 링크: ${ticket.sourceUrl}`);
+    return lines.join("\n");
+  }
 
   if (ticket.status === "정상") {
-    const normalLine = ticket.action === "없음" ? "정상 진행 중" : `정상 진행 중 / ${ticket.action}`;
-    lines.push(`  ${normalLine}`);
+    const statusLine = ticket.action === "없음" ? "정상 진행 중" : `정상 진행 중 / ${ticket.action}`;
+    lines.push(`  ${statusLine}`);
     if (ticket.memo?.trim()) lines.push(`  내용: ${ticket.memo.trim()}`);
-    lines.push(`  기획: ${plannerLine}`);
-    lines.push(`  작업: ${ticket.workOwner}`);
     lines.push(`  확인: ${checkedText}`);
     lines.push(`  업무 링크: ${ticket.sourceUrl}`);
     return lines.join("\n");
   }
 
-  if (ticket.status === "완료") {
-    lines.push("  완료");
-    if (ticket.memo?.trim()) lines.push(`  내용: ${ticket.memo.trim()}`);
-    lines.push(`  기획: ${plannerLine}`);
-    lines.push(`  작업: ${ticket.workOwner}`);
-    lines.push(`  업무 링크: ${ticket.sourceUrl}`);
-    return lines.join("\n");
-  }
-
   lines.push(`  ${ticket.status} / ${ticket.action}`);
-  lines.push(`  기획: ${plannerLine}`);
-  lines.push(`  작업: ${ticket.workOwner}`);
   if (ticket.memo?.trim()) lines.push(`  내용: ${ticket.memo.trim()}`);
   lines.push(`  확인: ${checkedText} / 상태 변경: ${statusChangedText}`);
   lines.push(`  업무 링크: ${ticket.sourceUrl}`);
@@ -2229,6 +2215,11 @@ document.getElementById("leaderActionFilter").addEventListener("change", (event)
 document.getElementById("stateStatus").addEventListener("change", applyRecommendedAction);
 document.getElementById("stateAction").addEventListener("change", updateStatePreview);
 document.getElementById("stateMemo").addEventListener("input", updateStatePreview);
+document.getElementById("stateProgress").addEventListener("input", () => {
+  const val = document.getElementById("stateProgress").value;
+  document.getElementById("progressValue").textContent = `${val}%`;
+  updateStatePreview();
+});
 document.getElementById("stateForm").addEventListener("submit", handleStateSave);
 document.getElementById("ticketOwner").addEventListener("change", refreshRegisterSupportOwners);
 document.getElementById("editTicketOwner").addEventListener("change", refreshEditSupportOwners);

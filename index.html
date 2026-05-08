@@ -164,7 +164,7 @@
                 </label>
                 <label>
                   작업 담당/파트
-                  <input id="workOwner" type="text" placeholder="서버 김OO, 클라 박OO" required />
+                  <input id="workOwner" type="text" placeholder="서버 김OO, 클라 박OO" />
                 </label>
                 <div class="form-field field-wide">
                   <span class="field-label">추가 담당 기획자</span>
@@ -454,7 +454,7 @@
             </label>
             <label>
               작업 담당/파트
-              <input id="editWorkOwner" type="text" required />
+              <input id="editWorkOwner" type="text" />
             </label>
           </div>
         </section>
@@ -513,6 +513,11 @@
               <label>
                 메모
                 <textarea id="stateMemo" rows="5" placeholder="보고에 들어갈 한 줄 메모"></textarea>
+              </label>
+              <label class="progress-label">
+                작업 진행도 <span id="progressValue" class="progress-value-badge">0%</span>
+                <input type="range" id="stateProgress" min="0" max="100" step="5" value="0" class="progress-slider" />
+                <span class="progress-scale"><span>0%</span><span>50%</span><span>100%</span></span>
               </label>
             </div>
           </section>
