@@ -1686,7 +1686,7 @@ function buildTicketReport(ticket) {
 
   if (ticket.status === "완료") {
     lines.push("  완료");
-    if (ticket.memo?.trim()) lines.push(`  내용: ${ticket.memo.trim()}`);
+    if (ticket.memo?.trim()) lines.push(`  메모: ${ticket.memo.trim()}`);
     lines.push(`  업무 링크: ${ticket.sourceUrl}`);
     return lines.join("\n");
   }
@@ -1694,7 +1694,7 @@ function buildTicketReport(ticket) {
   if (ticket.status === "정상") {
     const statusLine = ticket.action === "없음" ? "정상 진행 중" : `정상 진행 중 / ${ticket.action}`;
     lines.push(`  ${statusLine}`);
-    if (ticket.memo?.trim()) lines.push(`  내용: ${ticket.memo.trim()}`);
+    if (ticket.memo?.trim()) lines.push(`  메모: ${ticket.memo.trim()}`);
     lines.push(`  확인: ${checkedText}`);
     lines.push(`  업무 링크: ${ticket.sourceUrl}`);
     return lines.join("\n");
