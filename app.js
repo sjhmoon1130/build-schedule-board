@@ -1,5 +1,6 @@
 const STORAGE_KEY = "build-board-prototype-v9";
 const SYNC_CONFIG_KEY = "build-board-sync-config-v1";
+const PLANKA_CONFIG_KEY = "build-board-planka-config-v1";
 
 const STATUS_OPTIONS = ["정상", "이슈 있음", "완료 확인 대기", "완료"];
 const ACTION_OPTIONS = [
@@ -37,6 +38,12 @@ const DEFAULT_SYNC_CONFIG = {
   status: "configured",
   message: "",
   lastSyncedAt: "",
+};
+const DEFAULT_PLANKA_CONFIG = {
+  serverUrl: "",
+  email: "",
+  password: "",
+  boards: [],
 };
 const memberNameCollator = new Intl.Collator("ko-KR", { sensitivity: "base" });
 
@@ -239,6 +246,8 @@ const hasStoredLocalState = Boolean(localStorage.getItem(STORAGE_KEY));
 let state = normalizeState(loadState());
 let memberInlineNotice = null;
 let syncConfig = normalizeSyncConfig(loadSyncConfig());
+let plankaConfig = loadPlankaConfig();
+let plankaTokenCache = null;
 let isApplyingRemoteState = false;
 let remoteSaveTimer = null;
 let lastSharedSignature = "";
@@ -278,6 +287,315 @@ function normalizeSyncConfig(config) {
 
 function saveSyncConfig() {
   localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(syncConfig));
+}
+
+function loadPlankaConfig() {
+  const stored = localStorage.getItem(PLANKA_CONFIG_KEY);
+  if (!stored) return { ...DEFAULT_PLANKA_CONFIG };
+  try {
+    return { ...DEFAULT_PLANKA_CONFIG, ...JSON.parse(stored) };
+  } catch {
+    return { ...DEFAULT_PLANKA_CONFIG };
+  }
+}
+
+function savePlankaConfig() {
+  localStorage.setItem(PLANKA_CONFIG_KEY, JSON.stringify(plankaConfig));
+}
+
+function plankaBaseUrl() {
+  return plankaConfig.serverUrl.replace(/\/$/, "");
+}
+
+function isPlankaUrl(url) {
+  const base = plankaBaseUrl();
+  if (!base || !url) return false;
+  return url.startsWith(base + "/") && /\/cards\/[^/?#]+/.test(url);
+}
+
+function extractPlankaCardId(url) {
+  const match = url.match(/\/cards\/([^/?#]+)/);
+  return match ? match[1] : null;
+}
+
+async function getPlankaToken(forceRefresh = false) {
+  if (!forceRefresh && plankaTokenCache?.token && Date.now() < plankaTokenCache.expiresAt - 60000) {
+    return plankaTokenCache.token;
+  }
+  const base = plankaBaseUrl();
+  const response = await fetch(`${base}/api/access-tokens`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ emailOrUsername: plankaConfig.email, password: plankaConfig.password }),
+  });
+  if (!response.ok) throw new Error(`Planka 로그인 실패 (${response.status})`);
+  const data = await response.json();
+  const token = data.item?.token || data.token;
+  if (!token) throw new Error("토큰을 받지 못했습니다.");
+  plankaTokenCache = { token, expiresAt: Date.now() + 23 * 60 * 60 * 1000 };
+  return token;
+}
+
+async function fetchPlankaCard(cardId) {
+  const base = plankaBaseUrl();
+  let token = await getPlankaToken();
+  let response = await fetch(`${base}/api/cards/${cardId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) {
+    token = await getPlankaToken(true);
+    response = await fetch(`${base}/api/cards/${cardId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  if (!response.ok) throw new Error(`카드 조회 실패 (${response.status})`);
+  const data = await response.json();
+  return data.item || data;
+}
+
+function extractBoardId(url) {
+  const match = url.match(/\/boards\/([^/?#]+)/);
+  return match ? match[1] : null;
+}
+
+function buildLabelForBuild(build) {
+  if (!build?.updateDate) return "";
+  const parts = build.updateDate.split("-");
+  if (parts.length < 3) return "";
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  return `${month}/${day}_Build`;
+}
+
+async function fetchBoardData(boardId) {
+  const base = plankaBaseUrl();
+  let token = await getPlankaToken();
+  let response = await fetch(`${base}/api/boards/${boardId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) {
+    token = await getPlankaToken(true);
+    response = await fetch(`${base}/api/boards/${boardId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  if (!response.ok) throw new Error(`보드 조회 실패 (${response.status})`);
+  return await response.json();
+}
+
+function renderPlankaBoards() {
+  const list = document.getElementById("plankaBoardList");
+  if (!list) return;
+  if (plankaConfig.boards.length === 0) {
+    list.innerHTML = `<p class="planka-empty-note">등록된 보드가 없습니다.</p>`;
+    return;
+  }
+  list.innerHTML = plankaConfig.boards
+    .map(
+      (board, idx) => `
+      <div class="planka-board-item">
+        <span class="planka-board-name">${escapeHtml(board.name)}</span>
+        <button class="icon-button" type="button" data-remove-board="${idx}" title="삭제" aria-label="삭제">×</button>
+      </div>`
+    )
+    .join("");
+}
+
+function openPlankaImportDialog() {
+  if (plankaConfig.boards.length === 0) {
+    showToast("데이터 연결 설정에서 Planka 보드를 먼저 추가해 주세요.");
+    return;
+  }
+  if (!plankaConfig.email || !plankaConfig.password) {
+    showToast("데이터 연결 설정에서 Planka 계정을 먼저 입력해 주세요.");
+    return;
+  }
+
+  const build = currentBuild();
+  const label = buildLabelForBuild(build);
+  const labelInput = document.getElementById("plankaLabelFilter");
+  const descEl = document.getElementById("plankaImportDesc");
+  if (labelInput) labelInput.value = label;
+  if (descEl) descEl.textContent = build ? `현재 빌드: ${build.name}` : "라벨을 입력하고 불러오기를 눌러주세요.";
+
+  const ownerSelect = document.getElementById("plankaImportOwner");
+  if (ownerSelect) {
+    ownerSelect.innerHTML = sortedActiveWorkMembers()
+      .map((m) => `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.part)})</option>`)
+      .join("");
+    ownerSelect.value = defaultTicketOwnerId();
+  }
+
+  const cardList = document.getElementById("plankaCardList");
+  if (cardList) cardList.innerHTML = `<p class="planka-card-empty">불러오기를 눌러 카드를 가져오세요.</p>`;
+  updatePlankaImportCount();
+  openDialog("plankaImportDialog");
+
+  if (label) fetchAndRenderPlankaCards();
+}
+
+async function fetchAndRenderPlankaCards() {
+  const labelFilter = document.getElementById("plankaLabelFilter")?.value.trim();
+  const cardList = document.getElementById("plankaCardList");
+  const fetchBtn = document.getElementById("plankaFetchCards");
+
+  if (!labelFilter) {
+    showToast("라벨을 입력해 주세요.");
+    return;
+  }
+
+  if (cardList) cardList.innerHTML = `<p class="planka-card-empty">카드를 불러오는 중...</p>`;
+  if (fetchBtn) fetchBtn.disabled = true;
+
+  const base = plankaBaseUrl();
+  const existingUrls = new Set(
+    state.tickets.filter((t) => !t.isArchived).map((t) => t.sourceUrl)
+  );
+
+  try {
+    const allGroups = [];
+
+    for (const boardConfig of plankaConfig.boards) {
+      const data = await fetchBoardData(boardConfig.boardId);
+      const board = data.item || {};
+      const included = data.included || {};
+      const lists = included.lists || [];
+      const cards = included.cards || [];
+      const cardLabels = included.cardLabels || [];
+      const labels = included.labels || [];
+
+      const matchingLabelIds = new Set(
+        labels.filter((l) => l.name === labelFilter).map((l) => l.id)
+      );
+      if (matchingLabelIds.size === 0) continue;
+
+      const matchingCardIds = new Set(
+        cardLabels.filter((cl) => matchingLabelIds.has(cl.labelId)).map((cl) => cl.cardId)
+      );
+
+      const matchingCards = cards.filter((c) => matchingCardIds.has(c.id) && !c.isArchived);
+      if (matchingCards.length === 0) continue;
+
+      const listMap = new Map(lists.map((l) => [l.id, l.name]));
+
+      allGroups.push({
+        boardName: board.name || boardConfig.name,
+        boardId: boardConfig.boardId,
+        cards: matchingCards.map((c) => {
+          const sourceUrl = `${base}/boards/${boardConfig.boardId}/cards/${c.id}`;
+          return {
+            id: c.id,
+            name: c.name,
+            listName: listMap.get(c.listId) || "",
+            sourceUrl,
+            alreadyRegistered: existingUrls.has(sourceUrl),
+          };
+        }),
+      });
+    }
+
+    renderPlankaCardList(allGroups);
+  } catch (err) {
+    const isCors = err instanceof TypeError;
+    if (cardList) {
+      cardList.innerHTML = `<p class="planka-card-empty planka-hint-warn">${
+        isCors ? "CORS 오류: 카드를 불러올 수 없습니다." : `오류: ${escapeHtml(err.message)}`
+      }</p>`;
+    }
+  } finally {
+    if (fetchBtn) fetchBtn.disabled = false;
+  }
+}
+
+function renderPlankaCardList(groups) {
+  const cardList = document.getElementById("plankaCardList");
+  if (!cardList) return;
+
+  if (groups.length === 0) {
+    cardList.innerHTML = `<p class="planka-card-empty">해당 라벨의 카드가 없습니다.</p>`;
+    updatePlankaImportCount();
+    return;
+  }
+
+  cardList.innerHTML = groups
+    .map(
+      (group) => `
+      <div class="planka-card-group">
+        <label class="planka-group-header">
+          <input type="checkbox" class="planka-board-check" data-board="${escapeHtml(group.boardName)}" />
+          <span>${escapeHtml(group.boardName)}</span>
+        </label>
+        ${group.cards
+          .map(
+            (card) => `
+          <label class="planka-card-item${card.alreadyRegistered ? " is-registered" : ""}">
+            <input type="checkbox" class="planka-card-check"
+              data-url="${escapeHtml(card.sourceUrl)}"
+              data-name="${escapeHtml(card.name)}"
+              ${card.alreadyRegistered ? "disabled checked" : ""}
+            />
+            <span class="planka-card-name">${escapeHtml(card.name)}</span>
+            <span class="planka-card-meta">${escapeHtml(card.listName)}${card.alreadyRegistered ? " · 이미 등록됨" : ""}</span>
+          </label>`
+          )
+          .join("")}
+      </div>`
+    )
+    .join("");
+
+  updatePlankaImportCount();
+}
+
+function updatePlankaImportCount() {
+  const count = document.querySelectorAll(".planka-card-check:checked:not(:disabled)").length;
+  const btn = document.getElementById("plankaImportSelected");
+  if (!btn) return;
+  btn.textContent = count > 0 ? `선택한 카드 등록 (${count})` : "선택한 카드 등록";
+  btn.disabled = count === 0;
+}
+
+function handlePlankaImportSelected() {
+  const checked = [...document.querySelectorAll(".planka-card-check:checked:not(:disabled)")];
+  if (checked.length === 0) return;
+
+  const ownerId = document.getElementById("plankaImportOwner")?.value;
+  if (!ownerId) {
+    showToast("담당 기획자를 선택해 주세요.");
+    return;
+  }
+
+  const timestamp = nowIso();
+  let added = 0;
+
+  checked.forEach((cb) => {
+    const sourceUrl = cb.dataset.url;
+    if (state.tickets.some((t) => t.sourceUrl === sourceUrl && !t.isArchived)) return;
+    state.tickets.push({
+      id: createId("T"),
+      buildId: currentBuild().id,
+      sourceUrl,
+      name: cb.dataset.name,
+      ownerId,
+      supportOwnerIds: [],
+      workOwner: "",
+      status: "정상",
+      action: "없음",
+      memo: "",
+      progress: 0,
+      lastStatusChangedAt: timestamp,
+      lastCheckedAt: timestamp,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      isArchived: false,
+    });
+    added++;
+  });
+
+  if (added > 0) {
+    render({ remote: true });
+    showToast(`${added}개 티켓을 등록했습니다.`);
+    document.getElementById("plankaImportDialog").close();
+  }
 }
 
 function normalizeState(data) {
@@ -814,6 +1132,14 @@ function renderSyncStatus() {
 
   if (storageMode) storageMode.value = syncConfig.mode;
   if (sheetWebAppUrl && document.activeElement !== sheetWebAppUrl) sheetWebAppUrl.value = syncConfig.webAppUrl;
+
+  const plankaServerUrl = document.getElementById("plankaServerUrl");
+  const plankaEmail = document.getElementById("plankaEmail");
+  const plankaPassword = document.getElementById("plankaPassword");
+  if (plankaServerUrl && document.activeElement !== plankaServerUrl) plankaServerUrl.value = plankaConfig.serverUrl;
+  if (plankaEmail && document.activeElement !== plankaEmail) plankaEmail.value = plankaConfig.email;
+  if (plankaPassword && document.activeElement !== plankaPassword) plankaPassword.value = plankaConfig.password;
+  renderPlankaBoards();
   if (!statusCard || !statusTitle || !statusDescription) return;
 
   statusCard.className = `sync-status-card ${status}`;
@@ -2272,6 +2598,138 @@ document.getElementById("syncForm").addEventListener("submit", (event) => {
 
 document.getElementById("testSheetConnection").addEventListener("click", testSheetConnection);
 document.getElementById("openSheetTestUrl").addEventListener("click", openSheetTestUrl);
+
+document.getElementById("ticketUrl").addEventListener("input", () => {
+  const url = document.getElementById("ticketUrl").value.trim();
+  const hint = document.getElementById("ticketUrlHint");
+  if (!hint) return;
+
+  if (!isPlankaUrl(url)) {
+    hint.textContent = "";
+    hint.className = "field-hint";
+    return;
+  }
+
+  const cardId = extractPlankaCardId(url);
+  if (!cardId) return;
+
+  if (!plankaConfig.email || !plankaConfig.password) {
+    hint.textContent = "Planka 계정을 데이터 연결 설정에서 먼저 입력해 주세요.";
+    hint.className = "field-hint planka-hint-warn";
+    return;
+  }
+
+  hint.textContent = "Planka에서 카드 정보를 가져오는 중...";
+  hint.className = "field-hint";
+
+  fetchPlankaCard(cardId)
+    .then((card) => {
+      if (card.name) {
+        document.getElementById("ticketName").value = card.name;
+        hint.textContent = "제목을 자동으로 입력했습니다.";
+        hint.className = "field-hint planka-hint-ok";
+      }
+    })
+    .catch((err) => {
+      const isCors = err instanceof TypeError;
+      hint.textContent = isCors
+        ? "CORS 오류: Planka 관리자에게 이 도메인 허용 설정을 요청해 주세요."
+        : `오류: ${err.message}`;
+      hint.className = "field-hint planka-hint-warn";
+    });
+});
+
+document.getElementById("savePlankaConfig").addEventListener("click", () => {
+  plankaConfig.serverUrl = document.getElementById("plankaServerUrl").value.trim();
+  plankaConfig.email = document.getElementById("plankaEmail").value.trim();
+  plankaConfig.password = document.getElementById("plankaPassword").value;
+  plankaTokenCache = null;
+  savePlankaConfig();
+  showToast("Planka 설정을 저장했습니다.");
+});
+
+document.getElementById("addPlankaBoard").addEventListener("click", async () => {
+  const input = document.getElementById("plankaNewBoardUrl");
+  const url = input.value.trim();
+  const boardId = extractBoardId(url);
+  if (!boardId) {
+    showToast("올바른 보드 URL을 입력해 주세요.");
+    return;
+  }
+  if (plankaConfig.boards.some((b) => b.boardId === boardId)) {
+    showToast("이미 등록된 보드입니다.");
+    return;
+  }
+  if (!plankaConfig.serverUrl || !plankaConfig.email || !plankaConfig.password) {
+    showToast("Planka 계정을 먼저 저장해 주세요.");
+    return;
+  }
+  const button = document.getElementById("addPlankaBoard");
+  button.disabled = true;
+  try {
+    const data = await fetchBoardData(boardId);
+    const name = data.item?.name || boardId;
+    plankaConfig.boards.push({ boardId, name });
+    savePlankaConfig();
+    input.value = "";
+    renderPlankaBoards();
+    showToast(`"${name}" 보드를 추가했습니다.`);
+  } catch (err) {
+    showToast(`보드 추가 실패: ${err.message}`);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("plankaBoardList").addEventListener("click", (event) => {
+  const removeBtn = event.target.closest("[data-remove-board]");
+  if (!removeBtn) return;
+  const idx = parseInt(removeBtn.dataset.removeBoard, 10);
+  plankaConfig.boards.splice(idx, 1);
+  savePlankaConfig();
+  renderPlankaBoards();
+});
+
+document.getElementById("openPlankaImport").addEventListener("click", openPlankaImportDialog);
+
+document.getElementById("plankaFetchCards").addEventListener("click", fetchAndRenderPlankaCards);
+
+document.getElementById("plankaCardList").addEventListener("change", (event) => {
+  if (event.target.classList.contains("planka-board-check")) {
+    const boardName = event.target.dataset.board;
+    const checked = event.target.checked;
+    document.querySelectorAll(`.planka-card-check[data-url]:not(:disabled)`)
+      .forEach((cb) => {
+        const item = cb.closest(".planka-card-group");
+        const header = item?.querySelector(".planka-board-check");
+        if (header?.dataset.board === boardName) cb.checked = checked;
+      });
+  }
+  updatePlankaImportCount();
+});
+
+document.getElementById("plankaImportSelected").addEventListener("click", handlePlankaImportSelected);
+
+document.getElementById("testPlankaConnection").addEventListener("click", async () => {
+  const button = document.getElementById("testPlankaConnection");
+  const prevText = button.textContent;
+  button.disabled = true;
+  button.textContent = "확인 중...";
+  plankaConfig.serverUrl = document.getElementById("plankaServerUrl").value.trim();
+  plankaConfig.email = document.getElementById("plankaEmail").value.trim();
+  plankaConfig.password = document.getElementById("plankaPassword").value;
+  plankaTokenCache = null;
+  try {
+    await getPlankaToken();
+    showToast("Planka 연결 성공!", "success");
+  } catch (err) {
+    const isCors = err instanceof TypeError;
+    showToast(isCors ? "CORS 오류: Planka 서버 설정이 필요합니다." : `연결 실패: ${err.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = prevText;
+  }
+});
 document.getElementById("loadSheetState").addEventListener("click", loadSharedStateFromSheet);
 document.getElementById("pushLocalState").addEventListener("click", () => {
   const confirmed = window.confirm("현재 브라우저의 빌드/팀원/티켓 데이터를 Google Sheet에 저장할까요?");

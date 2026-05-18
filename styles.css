@@ -1,130 +1,139 @@
 :root {
   color-scheme: light;
-  --bg: #f4f6f8;
+  --bg: #ede7df;
   --surface: #ffffff;
-  --surface-strong: #eef2f5;
-  --surface-raised: #fbfcfd;
-  --line: #d8dfe7;
-  --line-soft: #e8edf2;
-  --text: #17202a;
-  --muted: #687586;
-  --primary: #2563eb;
-  --primary-dark: #1e4fbf;
-  --primary-soft: #eef5ff;
-  --primary-line: #bbd2f2;
-  --primary-text: #1e4fbf;
+  --surface-strong: #f5efe7;
+  --surface-raised: #faf6f2;
+  --line: #d8cdc1;
+  --line-soft: #e5ddd4;
+  --text: #1c1208;
+  --muted: #7d6b58;
+  --primary: #b8801a;
+  --primary-dark: #8f6212;
+  --primary-soft: #fdf3e0;
+  --primary-line: #e8c47a;
+  --primary-text: #8f6212;
   --primary-on: #ffffff;
-  --green: #16835a;
-  --red: #c53b3b;
-  --orange: #b8671c;
-  --blue: #2f73b8;
-  --gray: #788493;
-  --violet: #7154b8;
-  --yellow: #f7c948;
-  --green-soft: #edf8f2;
-  --green-line: #b7dfc8;
-  --green-text: #126044;
-  --red-soft: #fff1f1;
-  --red-line: #efb8b8;
-  --red-text: #9f2d2d;
-  --orange-soft: #fff6ec;
-  --orange-line: #f0cfaa;
-  --orange-text: #835015;
-  --blue-soft: #edf5ff;
-  --blue-line: #b7d4f0;
-  --blue-text: #1f5e9d;
-  --violet-soft: #f4f0ff;
-  --violet-line: #d2c5f3;
-  --violet-text: #593c9d;
-  --gray-soft: #eef1f4;
-  --gray-text: #4d5661;
-  --focus-ring: rgba(37, 99, 235, 0.18);
-  --neutral-ring: rgba(122, 132, 145, 0.14);
-  --success-ring: rgba(24, 131, 90, 0.16);
-  --warning-ring: rgba(184, 103, 28, 0.18);
-  --danger-ring: rgba(197, 59, 59, 0.18);
-  --danger-line-soft: rgba(197, 59, 59, 0.35);
-  --due-soft: #fffafa;
-  --due-overdue-soft: #fff7f7;
-  --hover-soft: #f6f9ff;
-  --toast-bg: #17202a;
-  --toast-text: #ffffff;
-  --backdrop: rgba(12, 20, 32, 0.45);
+  --green: #3d7a52;
+  --red: #a83838;
+  --orange: #b85a28;
+  --blue: #4a6e8a;
+  --gray: #7a7060;
+  --violet: #7a4a70;
+  --yellow: #b8900a;
+  --green-soft: #edf5f0;
+  --green-line: #b0d4bc;
+  --green-text: #2a5a3c;
+  --red-soft: #fdf0ee;
+  --red-line: #e8b8b0;
+  --red-text: #7a2828;
+  --orange-soft: #fdf2ec;
+  --orange-line: #e8c0a0;
+  --orange-text: #8a3e18;
+  --blue-soft: #eef2f6;
+  --blue-line: #b8c8d8;
+  --blue-text: #2e4e6a;
+  --violet-soft: #f5f0f4;
+  --violet-line: #d0b8cc;
+  --violet-text: #5a2e54;
+  --gray-soft: #f2eeea;
+  --gray-text: #504840;
+  --focus-ring: rgba(184, 128, 26, 0.2);
+  --neutral-ring: rgba(122, 112, 96, 0.14);
+  --success-ring: rgba(61, 122, 82, 0.18);
+  --warning-ring: rgba(184, 90, 40, 0.2);
+  --danger-ring: rgba(168, 56, 56, 0.2);
+  --danger-line-soft: rgba(168, 56, 56, 0.35);
+  --due-soft: #fdf8f2;
+  --due-overdue-soft: #fdf4f0;
+  --hover-soft: #fdf8f2;
+  --toast-bg: #1c1208;
+  --toast-text: #f5efe7;
+  --backdrop: rgba(28, 18, 8, 0.48);
   --avatar-on: #ffffff;
-  --avatar-green: #188758;
-  --avatar-blue: #3175c1;
-  --avatar-violet: #7652b8;
-  --avatar-orange: #c26a1b;
-  --avatar-gray: #66717f;
-  --avatar-red: #c43b3b;
-  --avatar-teal: #0f766e;
-  --avatar-black: #111827;
-  --shadow: 0 12px 28px rgba(24, 35, 54, 0.07);
-  --shadow-soft: 0 6px 16px rgba(24, 35, 54, 0.05);
+  --avatar-green: #3d7a52;
+  --avatar-blue: #4a6e8a;
+  --avatar-violet: #7a4a70;
+  --avatar-orange: #b85a28;
+  --avatar-gray: #7a7060;
+  --avatar-red: #a83838;
+  --avatar-teal: #3a6e68;
+  --avatar-black: #2c1a0a;
+  --shadow: 0 12px 28px rgba(28, 18, 8, 0.09);
+  --shadow-soft: 0 6px 16px rgba(28, 18, 8, 0.06);
+  --topbar-bg: #2c1a0a;
+  --topbar-line: #4a2c14;
+  --topbar-text: #f0e4d0;
+  --topbar-muted: rgba(240, 228, 208, 0.58);
 }
 
 body[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #111418;
-  --surface: #1a2027;
-  --surface-strong: #222a33;
-  --surface-raised: #1d242d;
-  --line: #343d49;
-  --line-soft: #2a333e;
-  --text: #edf1f5;
-  --muted: #a7b0bd;
-  --primary: #7aa7ff;
-  --primary-dark: #bad2ff;
-  --primary-soft: #203246;
-  --primary-line: #3f6990;
-  --primary-text: #b9d4ff;
-  --primary-on: #0d1623;
-  --green: #58c98d;
-  --red: #ff8787;
-  --orange: #f0a65c;
-  --blue: #7db5f5;
-  --gray: #a5afbd;
-  --violet: #b59cff;
-  --green-soft: #1f352b;
-  --green-line: #397859;
-  --green-text: #9de5bf;
-  --red-soft: #3a2528;
-  --red-line: #7e3d45;
-  --red-text: #ffb6b6;
-  --orange-soft: #3b2d20;
-  --orange-line: #7f5a32;
-  --orange-text: #ffd09a;
-  --blue-soft: #203246;
-  --blue-line: #3f6990;
-  --blue-text: #b3d8ff;
-  --violet-soft: #2d2941;
-  --violet-line: #6655a3;
-  --violet-text: #d7caff;
-  --gray-soft: #2a333e;
-  --gray-text: #c4ccd5;
-  --focus-ring: rgba(122, 167, 255, 0.24);
-  --neutral-ring: rgba(165, 175, 189, 0.16);
-  --success-ring: rgba(88, 201, 141, 0.18);
-  --warning-ring: rgba(240, 166, 92, 0.2);
-  --danger-ring: rgba(255, 135, 135, 0.2);
-  --danger-line-soft: rgba(255, 135, 135, 0.36);
-  --due-soft: #261f25;
-  --due-overdue-soft: #2b1d21;
-  --hover-soft: #202b38;
-  --toast-bg: #edf1f5;
-  --toast-text: #111418;
-  --backdrop: rgba(0, 0, 0, 0.62);
-  --avatar-on: #ffffff;
-  --avatar-green: #19875f;
-  --avatar-blue: #3578c4;
-  --avatar-violet: #7b5ac3;
-  --avatar-orange: #c27127;
-  --avatar-gray: #738091;
-  --avatar-red: #c94b4b;
-  --avatar-teal: #14877e;
-  --avatar-black: #0d1117;
-  --shadow: 0 14px 28px rgba(0, 0, 0, 0.3);
-  --shadow-soft: 0 8px 18px rgba(0, 0, 0, 0.2);
+  --bg: #150e07;
+  --surface: #1e1408;
+  --surface-strong: #271b0d;
+  --surface-raised: #221708;
+  --line: #3d2a18;
+  --line-soft: #302012;
+  --text: #f0e4d4;
+  --muted: #a08878;
+  --primary: #d4a840;
+  --primary-dark: #e8c060;
+  --primary-soft: #2a1e08;
+  --primary-line: #5a4020;
+  --primary-text: #e0b84a;
+  --primary-on: #1a0e04;
+  --green: #5aaa72;
+  --red: #e06060;
+  --orange: #e07840;
+  --blue: #7aa0c0;
+  --gray: #a09888;
+  --violet: #b07aaa;
+  --yellow: #e8b030;
+  --green-soft: #1a2e20;
+  --green-line: #3a6048;
+  --green-text: #8ad4a8;
+  --red-soft: #2e1a1a;
+  --red-line: #6a3838;
+  --red-text: #e8a8a8;
+  --orange-soft: #2e1e10;
+  --orange-line: #6a3e20;
+  --orange-text: #e8b88a;
+  --blue-soft: #1a2030;
+  --blue-line: #3a5068;
+  --blue-text: #a8c8e8;
+  --violet-soft: #281a28;
+  --violet-line: #583848;
+  --violet-text: #d4a8cc;
+  --gray-soft: #201c18;
+  --gray-text: #c8beb0;
+  --focus-ring: rgba(212, 168, 64, 0.24);
+  --neutral-ring: rgba(160, 152, 136, 0.16);
+  --success-ring: rgba(90, 170, 114, 0.2);
+  --warning-ring: rgba(224, 120, 64, 0.22);
+  --danger-ring: rgba(224, 96, 96, 0.22);
+  --danger-line-soft: rgba(224, 96, 96, 0.38);
+  --due-soft: #1e1508;
+  --due-overdue-soft: #221208;
+  --hover-soft: #1e1a12;
+  --toast-bg: #f0e4d4;
+  --toast-text: #1c1208;
+  --backdrop: rgba(8, 4, 0, 0.62);
+  --avatar-on: #f0e4d4;
+  --avatar-green: #5aaa72;
+  --avatar-blue: #7aa0c0;
+  --avatar-violet: #b07aaa;
+  --avatar-orange: #e07840;
+  --avatar-gray: #a09888;
+  --avatar-red: #e06060;
+  --avatar-teal: #5aaa9a;
+  --avatar-black: #c8b4a0;
+  --shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.22);
+  --topbar-bg: #0e0802;
+  --topbar-line: #2a1808;
+  --topbar-text: #f0e4d0;
+  --topbar-muted: rgba(240, 228, 208, 0.5);
 }
 
 * {
@@ -182,7 +191,30 @@ a:hover {
 
 .app-shell {
   min-height: 100vh;
-  padding: 18px 24px 28px;
+  padding: 0 24px 28px;
+}
+
+.topbar-wrap {
+  background: var(--topbar-bg);
+  margin: 0 -24px;
+  padding: 18px 24px 16px;
+  border-bottom: 1px solid var(--topbar-line);
+}
+
+.topbar-wrap h1 {
+  color: var(--topbar-text);
+}
+
+.topbar-wrap .top-action {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--topbar-text);
+}
+
+.topbar-wrap .top-action:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
 .topbar {
@@ -547,7 +579,7 @@ textarea:focus {
 
 .main-tabs {
   max-width: 1360px;
-  margin: 14px auto 0;
+  margin: 16px auto 0;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -1790,6 +1822,157 @@ body[data-theme="dark"] .build-metrics span {
   font-weight: 600;
 }
 
+.planka-hint-ok {
+  color: var(--green);
+}
+
+.planka-hint-warn {
+  color: var(--red);
+}
+
+/* Planka board management */
+.planka-board-add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.planka-board-add-row input {
+  flex: 1;
+}
+
+.planka-board-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.planka-empty-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.planka-board-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--surface-strong);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.planka-board-name {
+  color: var(--text);
+}
+
+/* Planka import dialog */
+.planka-import-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+
+.planka-filter-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: default;
+}
+
+.planka-filter-label input,
+.planka-filter-label select {
+  min-width: 160px;
+}
+
+.planka-card-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+  padding: 4px 0;
+  margin: 4px 0;
+}
+
+.planka-card-empty {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 20px 0;
+  text-align: center;
+}
+
+.planka-card-group {
+  margin-bottom: 8px;
+}
+
+.planka-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.planka-group-header input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.planka-card-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 4px 8px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.planka-card-item:hover {
+  background: var(--surface-strong);
+}
+
+.planka-card-item.is-registered {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.planka-card-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.planka-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+.planka-card-meta {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .progress-cell {
   display: flex;
   align-items: center;
@@ -2164,7 +2347,12 @@ pre {
 
 @media (max-width: 620px) {
   .app-shell {
-    padding: 14px;
+    padding: 0 14px 28px;
+  }
+
+  .topbar-wrap {
+    margin: 0 -14px;
+    padding: 14px 14px 14px;
   }
 
   .build-strip {
