@@ -68,9 +68,6 @@
             <button class="sheet-action" type="button" id="loadSheetStateMain">시트 불러오기</button>
             <button class="sheet-action is-primary" type="button" id="pushLocalStateMain">시트에 저장</button>
           </div>
-          <button class="tool-button action-tool" type="button" id="openPlankaImport" title="Planka에서 가져오기">
-            <span>Planka 가져오기</span>
-          </button>
           <button class="tool-button action-tool" type="button" id="openRegisterDialog" title="티켓 등록">
             <span class="tool-glyph ticket-glyph" aria-hidden="true"></span>
             <span>+ 티켓</span>
@@ -153,7 +150,6 @@
                 <label>
                   업무 링크
                   <input id="ticketUrl" type="url" placeholder="https://..." required />
-                  <span class="field-hint" id="ticketUrlHint"></span>
                 </label>
                 <label>
                   티켓명
@@ -613,48 +609,9 @@
           </section>
         </div>
 
-        <section class="form-section">
-          <div class="section-head">
-            <span class="section-index">3</span>
-            <h4>Planka 연동</h4>
-          </div>
-          <p class="field-hint">티켓 등록 시 Planka 카드 URL을 붙여넣으면 카드 제목을 자동으로 가져옵니다.</p>
-          <div class="form-grid">
-            <label>
-              Planka 서버 주소
-              <input id="plankaServerUrl" type="url" placeholder="http://192.168.x.x:3000" />
-            </label>
-            <label>
-              이메일
-              <input id="plankaEmail" type="email" placeholder="user@company.com" />
-            </label>
-            <label>
-              비밀번호
-              <input id="plankaPassword" type="password" placeholder="Planka 로그인 비밀번호" />
-            </label>
-          </div>
-          <div class="sync-actions">
-            <div class="sync-action-group">
-              <button class="secondary-action" type="button" id="testPlankaConnection">연결 확인</button>
-            </div>
-            <div class="sync-action-group is-primary">
-              <button class="primary-action" type="button" id="savePlankaConfig">Planka 설정 저장</button>
-            </div>
-          </div>
-          <div class="form-field field-wide" style="margin-top:16px">
-            <span class="field-label">가져올 보드 목록</span>
-            <span class="field-hint">보드 URL을 붙여넣고 추가 버튼을 눌러주세요.</span>
-            <div class="planka-board-add-row">
-              <input id="plankaNewBoardUrl" type="url" placeholder="http://서버주소/boards/보드ID" />
-              <button class="secondary-action" type="button" id="addPlankaBoard">추가</button>
-            </div>
-            <div id="plankaBoardList" class="planka-board-list"></div>
-          </div>
-        </section>
-
         <section class="form-section sync-command-section">
           <div class="section-head">
-            <span class="section-index">4</span>
+            <span class="section-index">3</span>
             <h4>동기화 작업</h4>
           </div>
           <div class="sync-actions">
@@ -670,37 +627,6 @@
           </div>
         </section>
       </form>
-    </dialog>
-
-    <dialog id="plankaImportDialog" class="modal wide-modal">
-      <div class="modal-head">
-        <div>
-          <h3>Planka에서 가져오기</h3>
-          <p class="muted" id="plankaImportDesc">현재 빌드 업데이트 날짜 기준으로 카드를 불러옵니다.</p>
-        </div>
-        <button class="icon-button" type="button" data-close-dialog="plankaImportDialog" title="닫기" aria-label="닫기">×</button>
-      </div>
-
-      <div class="planka-import-filter">
-        <label class="planka-filter-label">
-          라벨
-          <input id="plankaLabelFilter" type="text" placeholder="6/25_Build" />
-        </label>
-        <button class="secondary-action" type="button" id="plankaFetchCards">불러오기</button>
-        <label class="planka-filter-label">
-          담당 기획자
-          <select id="plankaImportOwner"></select>
-        </label>
-      </div>
-
-      <div id="plankaCardList" class="planka-card-list">
-        <p class="planka-card-empty">불러오기를 눌러 카드를 가져오세요.</p>
-      </div>
-
-      <div class="form-actions modal-footer">
-        <button class="secondary-action" type="button" data-close-dialog="plankaImportDialog">닫기</button>
-        <button class="primary-action" type="button" id="plankaImportSelected" disabled>선택한 카드 등록</button>
-      </div>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
